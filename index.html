@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tour Costa Rica - 16 Giorni</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    @font-face {
+      font-family: 'Neue';
+      src: url('neue.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Laica';
+      src: url('laica.otf') format('opentype');
+    }
+    @font-face {
+      font-family: 'Laica Italic';
+      src: url('./fonts/laica-italic.otf') format('opentype');
+      font-style: italic;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Neue', sans-serif;
+      background-color: #fff;
+    }
+    .map-container {
+      width: 100%;
+      height: 450px;
+    }
+    .info-container {
+      padding: 1rem;
+      background: #fff;
+    }
+    .day-menu {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      border-top: 1px solid #ccc;
+      background: #f8f8f8;
+    }
+    .day-menu button {
+      padding: 1rem;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-family: 'Neue', sans-serif;
+      color: #043C3B;
+    }
+    .day-menu button.active {
+      background: #043C3B;
+      color: white;
+    }
+    .day-title {
+      font-size: 1.5rem;
+      font-family: 'Laica', sans-serif;
+      margin-bottom: 1.5rem;
+      color: #043C3B;
+    }
+    .day-text {
+      line-height: 1.6;
+      font-family: 'Neue', sans-serif;
+    }
+
+    a {
+    color: #043C3B;
+    text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .map-container { height: 350px; }
+      .day-title { font-size: 1.2rem; }
+      .day-menu {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="map-container" id="map"></div>
+
+  <div class="day-menu" id="day-menu"></div>
+
+  <div class="info-container" id="day-content">
+    <!-- Contenuto dinamico -->
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const days = [
+  {
+    title: "Giorno 1 | 4 Agosto – Arrivo a San José",
+    content: `
+      <span style="color:#FF8400">Voli A/R ca. €1.250 a testa</span></strong><br>
+      11:25 MXP → 12:55 CDG (Parigi) – 1h 30<br>
+      13:55 CDG → 17:45 PTY (Panama) – 10h 50<br>
+      21:28 PTY → 21:53 SJO (San José) – 1h 25<br><br><br>
+      <span style="color:#FF8400">Arrivo, ritiro auto in aeroporto, notte</span><br>
+      Notte ca. €40<br>
+      Noleggio ca. €1300<br>
+      <a href='https://www.adobecar.com/' target='_blank'>Adobe</a>,
+      <a href='https://www.nationalcar.com/en/home.html' target='_blank'>National</a>,
+      <a href='https://www.enterprise.com/en/home.html' target='_blank'>Enterprise</a>,
+      <a href='https://www.alamo.com/en/home.html' target='_blank'>Alamo</a>,
+      <a href='https://vamosrentacar.com/' target='_blank'>Vamos</a>
+
+    `
+  },
+  {
+    title: "Giorno 2 | 7 Agosto – San José → Tortuguero",
+    content: `
+      <span style="color:#FF8400">Trasferimento</span><br>4h auto + 1,5h barca da La Pavona<br><br>
+      <span style="color:#FF8400">Attività</span><br>
+      → Barca o canoa nei canali (canoa consigliata per silenzio e fauna)<br>
+      → Sendero El Jaguar (2–3 km nella giungla)<br>
+      → Passeggiate lungo la spiaggia (balneazione sconsigliata per correnti)<br>
+      → Capire se si vuole fare un night tour > da luglio a ottobre, sono punto di osservazione delle tartarughe marine (Green Turtle).<br><br>
+      <span style="color:#FF8400">Info</span><br>
+      → Solo accesso via barca<br>
+      → Parcheggio custodito a La Pavona: $10/giorno<br>
+      → Barca pubblica: 4 al giorno oppure privata via accordo con lodge<br>
+      → Ingresso 1 giorno: $16,95 – portare passaporto o copia
+    `
+  },
+  {
+    title: "Giorno 3 | 8 Agosto – Tortuguero",
+    content: `
+      <span style="color:#FF8400">Attività</span><br>
+      → Possibilità di fare tour in barca all’alba (non saremo mai svegli in tempo eheh)<br>
+      → Camminata nei sentieri<br>
+      → Chill<br>
+    `
+  },
+  {
+    title: "Giorno 4 | 9 Agosto – Tortuguero → La Fortuna",
+    content: `
+      <span style="color:#FF8400">Trasferimento</span><br>1,5 h barca + 4–5h auto.<br><br>
+
+      <span style="color:#FF8400">Attività</span><br>
+      → Arrivo a La Fortuna, ai piedi del Vulcano Arenal.<br>
+      → Terme naturali (es. Baldi o Ecotermales).<br><br>
+      <span style="color:#FF8400">Info</span><br>
+      → Costo medio di una camera x 3gg: 170 | Capire se ha senso dormire già ad Arenal o se usare La Fortuna come base
+    `
+  },
+  {
+    title: "Giorno 5 | 10 Agosto – Gita ad Arenal",
+    content: `
+     <span style="color:#FF8400">Spostamento</span><br>25min in auto<br><br>
+    <span style="color:#FF8400">Attività</span><br>
+      → Escursione al Parco Nazionale Arenal<br>
+      → Sentieri nella foresta e colate laviche<br>
+      → Cascata La Fortuna ed esiste una zipline (in caso ti guardo mentre la fai)<br><br>
+     <span style="color:#FF8400">Info</span><br>
+     → Entrata $15 USD per adulti stranieri<br>
+     → Apertura tutti i giorni dalle 8:00 alle 16:00
+    `
+  },
+  {
+    title: "Giorno 6 | 11 Agosto – Arenal → Rio Celeste",
+    content: `
+      <span style="color:#FF8400">Attività</span><br>
+      → Gita di un giorno al Parco Tenorio e Rio Celeste.<br>
+      → Rientro a La Fortuna
+     <span style="color:#FF8400">Info</span><br>
+     → Entrata $12 USD per adulti stranieri<br>
+     → Orari: 8:00 – 14:00 (ultimo ingresso), il parco chiude alle 16:00
+     → Bisogna considerare la strada sterrata
+     → Il trekking fino alla cascata Rio Celeste è facile–intermedio, circa 3–4 km A/R (un po' fangoso nella stagione delle piogge)
+    `
+  },
+  {
+    title: "Giorno 7 | 12 Agosto – Arenal → Monteverde",
+    content: `
+    <span style="color:#FF8400">Alert</span><br>
+     Pare si tratti di una zona in cui solitamente si arriva via barca + van ma fattibile anche via terra:<br>
+     Percorso: via Tilarán – Lago Arenal – Santa Elena (Monteverde).<br>
+     Durata: 3,5–4 ore.<br>
+     L’ultimo tratto è sterrato e pieno di buche (circa 20–25 km).<br><br>
+
+    <span style="color:#FF8400">Attività</span><br>
+    → Dopo 25km sterrati, birrette e passeggiatine easy mi sembrano una buona soluzione.
+    `
+
+  },
+  {
+    title: "Giorno 8 | 13 agosto – Monteverde",
+    content: `
+     <span style="color:#FF8400">Attività</span><br>
+      → Trekking nella Riserva Biologica di Monteverde<br>
+      → Ponti sospesi e animaletti<br><br>
+     <span style="color:#FF8400">Info</span><br>
+     → Entrata $25 USD per adulti stranieri<br>
+    `
+  },
+  {
+    title: "Giorno 9 | 14 agosto – Monteverde → Playa Samara",
+    content: `
+      <span style="color:#FF8400">Trasferimento</span><br>
+      Circa 3,5–4 h.<br><br>
+      <span style="color:#FF8400">Attività</span><br>
+      → Arrivo sulla costa pacifica nord: chill in spiaggia.
+    `
+  },
+  {
+    title: "Giorno 10 | 15 agosto – Playa Samara",
+    content: `
+      <span style="color:#FF8400">Attività</span><br>
+      → Mare<br>
+    `
+  },
+  {
+    title: "Giorno 11 | 16 agosto – Playa Samara",
+    content: `
+      <span style="color:#FF8400">Attività</span><br>
+      → Possibilità di visitare Nosara* o fare snorkeling<br><br>
+      Nosara è una delle località più affascinanti e rilassate della costa pacifica della Costa Rica, situata nella penisola di Nicoya, nella provincia di Guanacaste. Non è una città vera e propria ma una zona che comprende diverse spiagge e piccoli villaggi tropicali immersi nella natura.
+    `
+  },
+  {
+    title: "Giorno 12 | 17 agosto – Samara → Manuel Antonio",
+    content: `
+          <span style="color:#FF8400">Trasferimento</span><br>
+      Circa 5–6h.<br><br>
+      <span style="color:#FF8400">Attività</span><br>
+      → Mare e chill (dicono sia una delle zone più belle per il mare)<br><br>
+    `
+  },
+  {
+    title: "Giorno 13 | 18 agosto – Manuel Antonio",
+    content: `
+      <span style="color:#FF8400">Attività</span><br><br>
+      Visita del Parco Nazionale Manuel Antonio:<br>
+      → Sentieri nella giungla<br>
+      → Spiagge<br>
+      → Scimmie cappuccine, bradipi e iguane<br><br>
+        <span style="color:#FF8400">Info</span><br>
+      → Adulti stranieri: $18,08 USD
+      → <a href=" https://serviciosenlinea.sinac.go.cr" target="_blank">serviciosenlinea.sinac.go.cr</a> si acquista solo online!
+    `
+  },
+  {
+    title: "Giorno 14 | 19 agosto – Manuel Antonio → San Gerardo de Dota",
+    content: `
+      <span style="color:#FF8400">Trasferimento</span><br>
+      Circa 3h.<br><br>
+      → Birdwatching > c'è il quetzal (l'uccello con il crestino da zarro)
+    `
+  },
+  {
+    title: "Giorno | 20 agosto – San Gerardo → San José",
+    content: `
+      <span style="color:#FF8400">Trasferimento</span><br>
+      Circa 2h 30
+ `
+  },
+  {
+    title: "Giorno | 21 agosto – Partenza",
+    content: `
+      Ritorno<br><br>
+      <span style="color:#FF8400">Voli</span></strong><br>
+      13:21 SJO → 16:30 MEX – 3h 10<br>
+      13:55 MEX → 13:50(+1) CDG – 10h 55<br>
+      16:50 CDG → 18:20 MXP – 1h 25<br><br><br>
+    `
+  }
+];
+
+    const contentEl = document.getElementById("day-content");
+    const menuEl = document.getElementById("day-menu");
+
+    days.forEach((day, i) => {
+      const btn = document.createElement("button");
+      btn.textContent = `Giorno ${i + 1}`;
+      if (i === 0) btn.classList.add("active");
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".day-menu button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        contentEl.innerHTML = `<div class='day-title'>${day.title}</div><div class='day-text'>${day.content}</div>`;
+      });
+      menuEl.appendChild(btn);
+    });
+
+    contentEl.innerHTML = `<div class='day-title'>${days[0].title}</div><div class='day-text'>${days[0].content}</div>`;
+
+    const map = L.map('map').setView([9.9, -84.2], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const points = [
+      { coords: [10.5380, -83.5020], label: "Giorno 2, 3 – Tortuguero" },
+      { coords: [10.4710, -84.6452], label: "Giorno 4, 5 – Arenal | La Fortuna" },
+      { coords: [10.7000, -85.0167], label: "Giorno 6 – Rio Celeste" },
+      { coords: [10.3000, -84.8167], label: "Giorno 7, 8 – Monteverde" },
+      { coords: [9.8800, -85.5300], label: "Giorno 9, 10, 11 – Playa Samara" },
+      { coords: [9.3766, -84.1340], label: "Giorno 12, 13 – Manuel Antonio" },
+      { coords: [9.5604, -83.8074], label: "Giorno 14 – San Gerardo de Dota" },
+      { coords: [9.9281, -84.0907], label: "Giorno 1, 15 – San José" }
+    ];
+
+    points.forEach(p => {
+      const circle = L.circleMarker(p.coords, {
+        radius: 8,
+        fillColor: "#043C3B",
+        color: "#ffffff",
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.9
+      }).addTo(map);
+      circle.bindTooltip(p.label, { permanent: true, direction: 'top' });
+    });
+
+    L.polyline(points.map(p => p.coords), { color: '#043C3B' }).addTo(map);
+  </script>
+</body>
+</html>
